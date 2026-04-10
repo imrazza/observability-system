@@ -1,0 +1,192 @@
+{
+  "title": "Observability — Full Stack Overview",
+  "uid": "obs-overview",
+  "version": 1,
+  "schemaVersion": 39,
+  "refresh": "10s",
+  "time": { "from": "now-1h", "to": "now" },
+  "tags": ["observability", "metrics", "logs", "traces"],
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Total Requests (5m)",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "datasource": "Prometheus",
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "reduceOptions": { "calcs": ["lastNotNull"] }
+      },
+      "targets": [{
+        "expr": "sum(increase(http_requests_total[5m]))",
+        "legendFormat": "Requests"
+      }]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Error Rate",
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+      "datasource": "Prometheus",
+      "options": {
+        "colorMode": "background",
+        "thresholds": {
+          "steps": [
+            { "color": "green", "value": null },
+            { "color": "yellow", "value": 0.01 },
+            { "color": "red", "value": 0.05 }
+          ]
+        }
+      },
+      "targets": [{
+        "expr": "sum(rate(http_requests_total{status_code=~'5..'}[5m])) / sum(rate(http_requests_total[5m]))",
+        "legendFormat": "Error Rate"
+      }],
+      "fieldConfig": {
+        "defaults": { "unit": "percentunit" }
+      }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "p95 Latency",
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+      "datasource": "Prometheus",
+      "options": { "colorMode": "background" },
+      "targets": [{
+        "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))",
+        "legendFormat": "p95"
+      }],
+      "fieldConfig": {
+        "defaults": { "unit": "s" }
+      }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Active Requests",
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+      "datasource": "Prometheus",
+      "targets": [{
+        "expr": "http_active_requests",
+        "legendFormat": "Active"
+      }]
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Request Rate by Endpoint",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "datasource": "Prometheus",
+      "options": { "tooltip": { "mode": "multi" } },
+      "targets": [{
+        "expr": "sum(rate(http_requests_total[1m])) by (endpoint)",
+        "legendFormat": "{{ endpoint }}"
+      }],
+      "fieldConfig": {
+        "defaults": { "unit": "reqps" }
+      }
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Latency Percentiles",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))",
+          "legendFormat": "p50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))",
+          "legendFormat": "p95"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))",
+          "legendFormat": "p99"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" } }
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "HTTP Status Codes Over Time",
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 12 },
+      "datasource": "Prometheus",
+      "targets": [{
+        "expr": "sum(rate(http_requests_total[1m])) by (status_code)",
+        "legendFormat": "{{ status_code }}"
+      }]
+    },
+    {
+      "id": 8,
+      "type": "piechart",
+      "title": "Orders by Category",
+      "gridPos": { "h": 7, "w": 6, "x": 12, "y": 12 },
+      "datasource": "Prometheus",
+      "targets": [{
+        "expr": "sum(increase(business_orders_total[1h])) by (product_category)",
+        "legendFormat": "{{ product_category }}"
+      }]
+    },
+    {
+      "id": 9,
+      "type": "piechart",
+      "title": "Order Status Distribution",
+      "gridPos": { "h": 7, "w": 6, "x": 18, "y": 12 },
+      "datasource": "Prometheus",
+      "targets": [{
+        "expr": "sum(increase(business_orders_total[1h])) by (status)",
+        "legendFormat": "{{ status }}"
+      }]
+    },
+    {
+      "id": 10,
+      "type": "logs",
+      "title": "Application Logs (Loki)",
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 19 },
+      "datasource": "Loki",
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "showCommonLabels": false,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": false,
+        "enableLogDetails": true,
+        "dedupStrategy": "none",
+        "sortOrder": "Descending"
+      },
+      "targets": [{
+        "expr": "{service=\"sample-app\"} | json",
+        "legendFormat": ""
+      }]
+    },
+    {
+      "id": 11,
+      "type": "timeseries",
+      "title": "Container CPU Usage %",
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 29 },
+      "datasource": "Prometheus",
+      "targets": [{
+        "expr": "sum(rate(container_cpu_usage_seconds_total{name=~\".+\"}[2m])) by (name) * 100",
+        "legendFormat": "{{ name }}"
+      }],
+      "fieldConfig": { "defaults": { "unit": "percent" } }
+    },
+    {
+      "id": 12,
+      "type": "timeseries",
+      "title": "Container Memory Usage",
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 29 },
+      "datasource": "Prometheus",
+      "targets": [{
+        "expr": "sum(container_memory_usage_bytes{name=~\".+\"}) by (name)",
+        "legendFormat": "{{ name }}"
+      }],
+      "fieldConfig": { "defaults": { "unit": "bytes" } }
+    }
+  ]
+}
