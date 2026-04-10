@@ -1,0 +1,55 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# SAMPLE APPLICATION LOGS (JSON structured, as shipped to Loki via Promtail)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# INFO — Startup
+{"timestamp":"2024-04-10T08:00:01.123Z","level":"INFO","logger":"sample-app","message":"Starting sample-app","module":"main","function":"<module>","line":120,"extra":{"port":8000}}
+
+# INFO — Incoming GET /api/users
+{"timestamp":"2024-04-10T08:00:15.441Z","level":"INFO","logger":"sample-app","message":"HTTP request","module":"main","function":"metrics_middleware","line":78,"extra":{"method":"GET","path":"/api/users","status":200,"duration_ms":43.2,"client_ip":"172.20.0.1"}}
+
+# INFO — Users fetched
+{"timestamp":"2024-04-10T08:00:15.443Z","level":"INFO","logger":"sample-app","message":"Users fetched","module":"main","function":"list_users","line":95,"extra":{"count":312}}
+
+# INFO — Successful order
+{"timestamp":"2024-04-10T08:01:02.881Z","level":"INFO","logger":"sample-app","message":"Order created","module":"main","function":"create_order","line":127,"extra":{"order_id":"ORD-47382","status":"success","category":"electronics"}}
+
+# WARNING — Failed order
+{"timestamp":"2024-04-10T08:01:55.002Z","level":"WARNING","logger":"sample-app","message":"Order failed","module":"main","function":"create_order","line":122,"extra":{"order_id":"ORD-83741","category":"clothing"}}
+
+# INFO — Product request
+{"timestamp":"2024-04-10T08:02:10.320Z","level":"INFO","logger":"sample-app","message":"HTTP request","module":"main","function":"metrics_middleware","line":78,"extra":{"method":"GET","path":"/api/products/42","status":200,"duration_ms":18.7,"client_ip":"172.20.0.1"}}
+
+# ERROR — Product not found
+{"timestamp":"2024-04-10T08:02:45.771Z","level":"ERROR","logger":"sample-app","message":"Product not found","module":"main","function":"get_product","line":140,"extra":{"product_id":9999}}
+
+# INFO — HTTP request with 404
+{"timestamp":"2024-04-10T08:02:45.772Z","level":"INFO","logger":"sample-app","message":"HTTP request","module":"main","function":"metrics_middleware","line":78,"extra":{"method":"GET","path":"/api/products/9999","status":404,"duration_ms":2.1,"client_ip":"172.20.0.1"}}
+
+# ERROR — Intentional demo error triggered
+{"timestamp":"2024-04-10T08:03:30.100Z","level":"ERROR","logger":"sample-app","message":"Intentional demo error triggered","module":"main","function":"simulate_error","line":148}
+
+# INFO — Load simulation completed
+{"timestamp":"2024-04-10T08:04:00.556Z","level":"INFO","logger":"sample-app","message":"Load simulation completed","module":"main","function":"simulate_load","line":152,"extra":{"requests":6}}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# EXAMPLE LogQL QUERIES FOR GRAFANA / LOKI EXPLORE
+# ─────────────────────────────────────────────────────────────────────────────
+
+# All logs from the app:
+#   {service="sample-app"} | json
+
+# Only ERROR logs:
+#   {service="sample-app"} | json | level = "ERROR"
+
+# Requests slower than 100ms:
+#   {service="sample-app"} | json | duration_ms > 100
+
+# Log rate by level (for graphing):
+#   sum(rate({service="sample-app"} | json [1m])) by (level)
+
+# Filter by specific endpoint:
+#   {service="sample-app"} | json | path = "/api/orders"
+
+# Correlate log with a trace (if traceID available):
+#   {service="sample-app"} | json | traceID = "abc123def456"
