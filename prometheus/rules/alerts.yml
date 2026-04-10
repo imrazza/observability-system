@@ -1,0 +1,36 @@
+groups:
+  - name: sample-app
+    interval: 30s
+    rules:
+      - alert: HighErrorRate
+        expr: |
+          (
+            rate(http_requests_total{status_code=~"5.."}[5m])
+            /
+            rate(http_requests_total[5m])
+          ) > 0.05
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High HTTP error rate on {{ $labels.endpoint }}"
+          description: "Error rate is {{ $value | humanizePercentage }} over the last 5 minutes."
+
+      - alert: HighLatency
+        expr: |
+          histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 1.0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High p95 latency"
+          description: "p95 latency is {{ $value }}s on {{ $labels.endpoint }}"
+
+      - alert: AppDown
+        expr: up{job="sample-app"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Sample app is down"
+          description: "The sample-app scrape target has been down for more than 1 minute."
